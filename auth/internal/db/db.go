@@ -4,10 +4,11 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/vctrl/currency-service/currency/internal/config"
+	"github.com/vctrl/currency-service/auth/internal/config"
 )
 
 func NewDatabaseConnection(cfg config.DatabaseConfig) (*sql.DB, string, error) {
+
 	dsn := cfg.ToDSN()
 
 	db, err := sql.Open("postgres", dsn)
