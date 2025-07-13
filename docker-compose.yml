@@ -28,17 +28,19 @@ services:
       postgres:
         condition: service_healthy
 
-  auth-generator:
-    image: andrianovartemii/gm-test-task-auth-generator:latest
-    ports:
-      - "8082:8080"
-    environment:
-      AUTH_TOKEN_LIFETIME: 2
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/ping"]
-      interval: 1s
-      timeout: 1s
-      retries: 5
+  # auth-generator:
+  #   image: andrianovartemii/gm-test-task-auth-generator:latest
+  #   ports:
+  #     - "8082:8080"
+  #   environment:
+  #     AUTH_TOKEN_LIFETIME: 2
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:8080/ping"]
+  #     interval: 1s
+  #     timeout: 1s
+  #     retries: 5
+
+
   cron:
     build:
       context: .
@@ -83,7 +85,7 @@ services:
   prometheus:
     image: prom/prometheus:latest
     volumes:
-      - /Users/vectoreal/Repos/github.com/vctrl/currency-service/currency/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./currency/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
     ports:
