@@ -28,6 +28,7 @@ services:
       postgres:
         condition: service_healthy
 
+  
   # auth-generator:
   #   image: andrianovartemii/gm-test-task-auth-generator:latest
   #   ports:
@@ -69,6 +70,22 @@ services:
       postgres:
         condition: service_healthy
     command: ["--config=/deployment/local/currency-local-config.yaml"]
+
+
+  auth:
+    build:
+      context: .
+      dockerfile: ./deployment/local/Dockerfile
+      args:
+        - BUILD_TARGET=./auth/cmd/auth/main.go
+    volumes:
+      - ./deployment/local:/deployment/local
+    ports:
+      - "8082:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["--config=/deployment/local/auth-local-config.yaml"]
 
   gateway:
     build:
