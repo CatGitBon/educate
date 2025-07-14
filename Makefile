@@ -1,4 +1,5 @@
-PROTO_SRC=proto/currency/currency_service.proto
+PROTO_SRC_CURRENCY=proto/currency/currency_service.proto
+PROTO_SRC_AUTH=proto/auth/auth_service.proto
 PROTO_OUT=.
 
 PROTOC_GEN_GO=protoc-gen-go
@@ -30,7 +31,9 @@ install-tools:
 
 proto: install-tools
 	@echo "Generating gRPC and Protobuf code..."
-	protoc --proto_path=proto --go_out=$(PROTO_OUT) --go-grpc_out=$(PROTO_OUT) $(PROTO_SRC)
+	protoc --proto_path=proto --go_out=$(PROTO_OUT) --go-grpc_out=$(PROTO_OUT) $(PROTO_SRC_CURRENCY)
+	@echo "Generating gRPC and Protobuf code..."
+	protoc --proto_path=proto --go_out=$(PROTO_OUT) --go-grpc_out=$(PROTO_OUT) $(PROTO_SRC_AUTH)
 
 build: proto
 	go build -o bin/app

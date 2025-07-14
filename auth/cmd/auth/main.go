@@ -11,7 +11,7 @@ import (
 	"github.com/vctrl/currency-service/auth/internal/handler"
 	"github.com/vctrl/currency-service/auth/internal/repository"
 	"github.com/vctrl/currency-service/auth/internal/service"
-	"github.com/vctrl/currency-service/pkg/currency"
+	"github.com/vctrl/currency-service/pkg/auth"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
@@ -48,9 +48,9 @@ func run() error {
 		log.Fatalf("error init exchange rate repository: %v", err)
 	}
 
-	svc := service.NewAuth(repo, logger)
+	srv := service.NewAuth(repo, logger)
 
-	authServer := handler.NewAuthServer(&svc, logger)
+	authServer := handler.NewAuthServer(&srv, logger)
 	// requestCount,
 	// requestDuration,
 	// appUptime,
@@ -65,14 +65,14 @@ func run() error {
 	return nil
 }
 
-func startGRPCServer(cfg config.AppConfig, srv handler.AuthServer) error {
+func startGRPCServer(cfg config.AppConfig, srv *handler.AuthServer) error {
 	lis, err := net.Listen("tcp", ":"+cfg.Service.ServerPort)
 	if err != nil {
 		return fmt.Errorf("failed to listen: %w", err)
 	}
 
 	s := grpc.NewServer()
-	currency.RegisterCurrencyServiceServer(s, srv)
+	auth.RegisterAuthServiceServer(s, srv)
 
 	log.Printf("gRPC server is listening on :%s", cfg.Service.ServerPort)
 	if err := s.Serve(lis); err != nil {
