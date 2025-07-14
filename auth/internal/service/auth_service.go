@@ -20,7 +20,22 @@ func NewAuth(
 	}
 }
 
-func (a Auth) GetUser() {
-	// TODO: Implement getUser method
-	a.logger.Info("getUser method called")
+func (a Auth) CreateUser() {
+	// TODO: Implement createUser method
+	a.logger.Info("createUser method called")
+}
+
+func (a Auth) DeleteUser() {
+	// TODO: Implement deleteUser method
+	a.logger.Info("deleteUser method called")
+}
+
+func (a Auth) UpdateUser() {
+	// TODO: Implement updateUser method
+	a.logger.Info("updateUser method called")
+}
+
+func (a Auth) GetUserByID() {
+	// TODO: Implement getUserByID method
+	a.logger.Info("getUserByID method called")
 }

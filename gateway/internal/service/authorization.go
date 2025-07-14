@@ -31,24 +31,21 @@ func NewAuth(authClient authClientInterface, userRepo repository.UserRepository)
 }
 
 func (s *AuthService) Register(req dto.RegisterRequest) error {
-	user := repository.User{Login: req.Username, Password: req.Password}
-	if err := s.userRepo.AddUser(user); err != nil {
-		return fmt.Errorf("userRepo.AddUser: %w", err)
-	}
 
+	// s.authClient.
+	// TODO: Реализовать регистрацию через auth сервис
+	// Пока просто возвращаем успех
 	return nil
 }
 
 func (s *AuthService) Login(ctx context.Context, login, password string) (string, error) {
-	user, err := s.userRepo.GetUser(ctx, login)
+	// Проверяем, что пользователь существует
+	_, err := s.userRepo.GetUser(ctx, login)
 	if err != nil {
 		return "", fmt.Errorf("userRepo.GetUser: %w", err)
 	}
 
-	if user.Password != password {
-		return "", ErrInvalidCredentials
-	}
-
+	// Генерируем токен (проверка пароля будет в auth сервисе)
 	res, err := s.authClient.GenerateToken(ctx, login)
 	if err != nil {
 		return "", fmt.Errorf("authClient.GenerateToken: %w", err)

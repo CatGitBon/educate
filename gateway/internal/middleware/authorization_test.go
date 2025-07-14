@@ -1,17 +1,19 @@
 package middleware
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 func TestAuth(t *testing.T) {
-	client := NewMOckCllient()
+	client := NewMockClient()
 	w := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(w)
 	ctx.Request.Header.Set("Authorization", "Bearer TOKEN")
-	auth := NewAuthorization()
+	auth := NewAuthorization(client, func(*gin.Context) bool { return true }, zap.NewNop())
 
 	// todo add auth header to
 	auth.Authorize()(ctx)

@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"sync"
+
+	"github.com/vctrl/currency-service/pkg/auth"
 )
 
 var (
@@ -17,14 +19,16 @@ type User struct {
 }
 
 type UserRepository struct {
-	users map[string]User
-	mu    *sync.RWMutex
+	users      map[string]User
+	mu         *sync.RWMutex
+	authClient auth.AuthServiceClient
 }
 
-func NewUser() UserRepository {
+func NewUser(authClient auth.AuthServiceClient) UserRepository {
 	return UserRepository{
-		users: make(map[string]User),
-		mu:    &sync.RWMutex{},
+		users:      make(map[string]User),
+		mu:         &sync.RWMutex{},
+		authClient: authClient,
 	}
 }
 
@@ -40,14 +44,21 @@ func (repo *UserRepository) AddUser(user User) error {
 	return nil
 }
 
-func (repo *UserRepository) GetUser(_ context.Context, login string) (User, error) {
-	repo.mu.RLock()
-	defer repo.mu.RUnlock()
+func (repo *UserRepository) GetUser(ctx context.Context, login string) (User, error) {
+	// Делаем gRPC вызов к auth сервису
+	req := &auth.GetUserByIdRequest{
+		UserId: login,
+	}
 
-	user, exists := repo.users[login]
-	if !exists {
+	resp, err := repo.authClient.GetUserById(ctx, req)
+
+	if err != nil {
 		return User{}, ErrUserNotFound
 	}
 
-	return user, nil
+	// Преобразуем ответ от auth сервиса в локальную структуру User
+	return User{
+		Login: resp.Username,
+		// Password не возвращается из auth сервиса по соображениям безопасности
+	}, nil
 }

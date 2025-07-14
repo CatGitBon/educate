@@ -7,7 +7,6 @@ import (
 	"net"
 
 	"github.com/vctrl/currency-service/auth/internal/config"
-	"github.com/vctrl/currency-service/auth/internal/db"
 	"github.com/vctrl/currency-service/auth/internal/handler"
 	"github.com/vctrl/currency-service/auth/internal/repository"
 	"github.com/vctrl/currency-service/auth/internal/service"
@@ -38,23 +37,23 @@ func run() error {
 		log.Fatalf("error loading config: %v", err)
 	}
 
-	db, _, err := db.NewDatabaseConnection(cfg.Database)
-	if err != nil {
-		log.Fatalf("error init database connection: %v", err)
-	}
+	// Временно отключаем базу данных для тестирования
+	// db, _, err := db.NewDatabaseConnection(cfg.Database)
+	// if err != nil {
+	// 	log.Fatalf("error init database connection: %v", err)
+	// }
 
-	repo, err := repository.NewAuth(db)
-	if err != nil {
-		log.Fatalf("error init exchange rate repository: %v", err)
-	}
+	// repo, err := repository.NewAuth(db)
+	// if err != nil {
+	// 	log.Fatalf("error init exchange rate repository: %v", err)
+	// }
 
-	srv := service.NewAuth(repo, logger)
+	// srv := service.NewAuth(repo, logger)
+
+	// Создаем mock сервис без базы данных
+	srv := service.NewAuth(repository.Auth{}, logger)
 
 	authServer := handler.NewAuthServer(&srv, logger)
-	// requestCount,
-	// requestDuration,
-	// appUptime,
-	// /*metrics*/)
 
 	go func() {
 		if err := startGRPCServer(cfg, authServer); err != nil {
@@ -62,7 +61,8 @@ func run() error {
 		}
 	}()
 
-	return nil
+	// Держим сервис запущенным
+	select {}
 }
 
 func startGRPCServer(cfg config.AppConfig, srv *handler.AuthServer) error {

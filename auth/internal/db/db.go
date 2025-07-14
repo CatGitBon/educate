@@ -9,7 +9,8 @@ import (
 
 func NewDatabaseConnection(cfg config.DatabaseConfig) (*sql.DB, string, error) {
 
-	dsn := cfg.ToDSN()
+	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.Name)
 
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {

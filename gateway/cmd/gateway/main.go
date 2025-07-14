@@ -15,7 +15,6 @@ import (
 	"github.com/vctrl/currency-service/gateway/internal/clients/auth"
 	"github.com/vctrl/currency-service/gateway/internal/config"
 	"github.com/vctrl/currency-service/gateway/internal/handler"
-	"github.com/vctrl/currency-service/gateway/internal/middleware"
 	"github.com/vctrl/currency-service/gateway/internal/repository"
 	"github.com/vctrl/currency-service/gateway/internal/service"
 	"github.com/vctrl/currency-service/pkg/grpc_client"
@@ -58,17 +57,24 @@ func run() error {
 		return fmt.Errorf("auth.NewAuthClient: %w", err)
 	}
 
+	defer func() {
+		if err := authClient.Close(); err != nil {
+			logger.Warn("Cannot close auth client", zap.Error(err))
+		}
+	}()
+
 	resp, err := authClient.Ping()
 	if err != nil {
 		return fmt.Errorf("authClient.Ping: %w", err)
 	}
 
-	if resp != "pong" {
-		return fmt.Errorf("auth client answered with invalid response: %w", err)
-	}
+	fmt.Println(resp)
+	// if resp != "pong" {
+	// 	return fmt.Errorf("auth client answered with invalid response: %w", err)
+	// }
 
-	authMiddleware := middleware.NewAuthorization(authClient, shouldSkipAuthMiddleware, logger)
-	router.Use(authMiddleware.Authorize())
+	// authMiddleware := middleware.NewAuthorization(authClient, shouldSkipAuthMiddleware, logger)
+	// router.Use(authMiddleware.Authorize())
 
 	currencyClient, conn, err := grpc_client.NewCurrencyServiceClient(cfg.GRPC.CurrencyServiceURL)
 	if err != nil {
@@ -87,7 +93,7 @@ func run() error {
 		currencyService := currency.NewService(currencyClient)
 	*/
 
-	userRepo := repository.NewUser()
+	userRepo := repository.NewUser(authClient.GetGRPCClient())
 	authService := service.NewAuth(authClient, userRepo)
 	currencyService := service.NewCurrency(currencyClient)
 

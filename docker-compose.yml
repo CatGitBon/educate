@@ -2,12 +2,15 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:13
+    image: postgres:15
     environment:
       POSTGRES_DB: currency_db
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password
       PGDATA: /data/postgres
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - ./common/db/initdb:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
     healthcheck:
@@ -16,7 +19,7 @@ services:
       timeout: 1s
       retries: 5
 
-  migrate:
+  migrate-currency:
     image: migrate/migrate
     command: >
       -path /migrations
@@ -24,6 +27,18 @@ services:
       up
     volumes:
       - ./currency/internal/migrations:/migrations
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  migrate-auth:
+    image: migrate/migrate
+    command: >
+      -path /migrations
+      -database postgres://admin:password@postgres:5432/auth_db?sslmode=disable 
+      up
+    volumes:
+      - ./auth/internal/migrations:/migrations
     depends_on:
       postgres:
         condition: service_healthy
@@ -81,7 +96,7 @@ services:
     volumes:
       - ./deployment/local:/deployment/local
     ports:
-      - "8082:8080"
+      - "8091:8091"
     depends_on:
       postgres:
         condition: service_healthy
@@ -97,6 +112,9 @@ services:
       - ./deployment/local:/deployment/local
     ports:
       - "8080:8080"
+    depends_on:
+      auth:
+        condition: service_started
     command: ["--config=/deployment/local/gateway-local-config.yaml"]
 
   prometheus:

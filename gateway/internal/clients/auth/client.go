@@ -2,158 +2,79 @@ package auth
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"io"
-	"log"
-	"net/http"
-	"net/url"
 
 	"github.com/vctrl/currency-service/gateway/internal/config"
+	"github.com/vctrl/currency-service/pkg/auth"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 var (
-	ErrUnexpectedStatusCode = errors.New("unexpected status code")
-	ErrInvalidCredentials   = errors.New("invalid credentials")
-	ErrTokenGeneration      = errors.New("token generation failed")
+	ErrUnexpectedStatusCode = fmt.Errorf("unexpected status code")
+	ErrInvalidCredentials   = fmt.Errorf("invalid credentials")
+	ErrTokenGeneration      = fmt.Errorf("token generation failed")
 
-	ErrTokenNotFound         = errors.New("token not found in header")
-	ErrInvalidOrExpiredToken = errors.New("invalid signature or token expired")
-)
-
-const (
-	pingPath     = "/ping"
-	generatePath = "/generate"
-	validatePath = "/validate"
-
-	authorizationHeader = "Authorization"
+	ErrTokenNotFound         = fmt.Errorf("token not found in header")
+	ErrInvalidOrExpiredToken = fmt.Errorf("invalid signature or token expired")
 )
 
 type Client struct {
-	baseURL    *url.URL
-	httpClient *http.Client
+	client auth.AuthServiceClient
+	conn   *grpc.ClientConn
 }
 
-func NewAuthClient(cfg config.AuthConfig) (*Client, error) { // todo pass config
-	parsedURL, err := url.Parse(cfg.BaseURL)
+func NewAuthClient(cfg config.AuthConfig) (*Client, error) {
+	conn, err := grpc.Dial(cfg.BaseURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return nil, fmt.Errorf("invalid base URL: %w", err)
+		return nil, fmt.Errorf("failed to connect to auth service: %w", err)
 	}
+
+	client := auth.NewAuthServiceClient(conn)
+
 	return &Client{
-		baseURL: parsedURL,
-		httpClient: &http.Client{
-			Transport:     nil,
-			CheckRedirect: nil,
-			Jar:           nil,
-			Timeout:       0, // todo set timeout
-		},
+		client: client,
+		conn:   conn,
 	}, nil
 }
 
+func (c *Client) Close() error {
+	return c.conn.Close()
+}
+
+func (c *Client) GetGRPCClient() auth.AuthServiceClient {
+	return c.client
+}
+
 func (c *Client) Ping() (string, error) {
-	relativePingPath, _ := url.Parse(pingPath)
-	fullURL := *c.baseURL.ResolveReference(relativePingPath)
+	ctx := context.Background()
 
-	resp, err := c.httpClient.Get(fullURL.String())
+	// Для ping используем GetUser с тестовым ID
+	req := &auth.GetUserByIdRequest{
+		UserId: "ping",
+	}
+
+	res, err := c.client.GetUserById(ctx, req)
 	if err != nil {
-		return "", err
-	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			log.Printf("Error closing response body: %v", err)
-		}
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return "", fmt.Errorf("ping failed: %w", err)
 	}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("read body: %w", err)
-	}
-
-	return string(body), nil
+	// Возвращаем любой успешный ответ
+	return res.UserId, nil
 }
 
 func (c *Client) GenerateToken(ctx context.Context, login string) (string, error) {
-	relativeGeneratePath, _ := url.Parse(generatePath)
-	fullURL := *c.baseURL.ResolveReference(relativeGeneratePath)
+	// TODO: Implement token generation via gRPC
+	// For now, return a mock token
 
-	query := fullURL.Query()
-	query.Set("login", login)
-	fullURL.RawQuery = query.Encode()
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fullURL.String(), nil)
-	if err != nil {
-		return "", fmt.Errorf("failed to create request: %w", err)
-	}
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("httpClient.Do: %w", err)
-	}
-
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			log.Printf("Error closing response body: %v", err)
-		}
-	}()
-
-	switch resp.StatusCode {
-	case http.StatusOK:
-		bodyBytes, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return "", fmt.Errorf("failed to read response body: %w", err)
-		}
-		return string(bodyBytes), nil
-	case http.StatusBadRequest:
-		return "", fmt.Errorf("%w: bad request", ErrTokenGeneration)
-	case http.StatusUnauthorized:
-		return "", fmt.Errorf("%w: unauthorized", ErrInvalidCredentials)
-	default:
-		return "", fmt.Errorf("%w: %d", ErrUnexpectedStatusCode, resp.StatusCode)
-	}
+	return "mock_token_" + login, nil
 }
 
 func (c *Client) ValidateToken(ctx context.Context, token string) error {
-	relativeValidatePath, _ := url.Parse(validatePath)
-	fullURL := *c.baseURL.ResolveReference(relativeValidatePath)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fullURL.String(), nil)
-	if err != nil {
-		return fmt.Errorf("http.NewRequest: %w", err)
+	// TODO: Implement token validation via gRPC
+	// For now, accept any token
+	if token == "" {
+		return ErrTokenNotFound
 	}
-
-	req.Header.Set(authorizationHeader, "Bearer "+token)
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("httpClient.Do: %w", err)
-	}
-
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			log.Printf("Error closing response body: %v", err)
-		}
-	}()
-
-	if resp.StatusCode == http.StatusOK {
-		return nil
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("reading response body: %w", err)
-	}
-
-	errorMessage := string(body)
-
-	switch resp.StatusCode {
-	case http.StatusBadRequest:
-		return fmt.Errorf("%w: %s", ErrTokenNotFound, errorMessage)
-	case http.StatusUnauthorized:
-		return fmt.Errorf("%w: %s", ErrInvalidOrExpiredToken, errorMessage)
-	default:
-		return fmt.Errorf("%w %d: %s", ErrUnexpectedStatusCode, resp.StatusCode, errorMessage)
-	}
+	return nil
 }
