@@ -1,0 +1,9 @@
+service:
+  server_port: "8091"
+
+database:
+  host: "localhost"
+  port: 5432
+  user: "postgres"
+  password: "password"
+  name: "auth_db" 

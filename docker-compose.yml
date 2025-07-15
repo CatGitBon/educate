@@ -1,60 +1,61 @@
 version: '3.8'
 
 services:
-  postgres:
+  pgs-auth:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d auth_db"]
+      interval: 1s
+      timeout: 1s
+      retries: 5
+    ports:
+      - "5433:5432"  # внешний порт 5433, внутри 5432
+    volumes:
+      - pgdata-auth:/var/lib/postgresql/data
+
+  pgs-cur:
     image: postgres:15
     environment:
       POSTGRES_DB: currency_db
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password
-      PGDATA: /data/postgres
-    volumes:
-      - ./data/postgres:/var/lib/postgresql/data
-      - ./common/db/initdb:/docker-entrypoint-initdb.d
-    ports:
-      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin -d currency_db"]
       interval: 1s
       timeout: 1s
       retries: 5
-
-  migrate-currency:
-    image: migrate/migrate
-    command: >
-      -path /migrations
-      -database postgres://admin:password@postgres:5432/currency_db?sslmode=disable 
-      up
+    ports:
+      - "5434:5432"  # внешний порт 5434, внутри 5432
     volumes:
-      - ./currency/internal/migrations:/migrations
-    depends_on:
-      postgres:
-        condition: service_healthy
+      - pgdata-currency:/var/lib/postgresql/data
 
-  migrate-auth:
+  mgt-auth:
     image: migrate/migrate
     command: >
       -path /migrations
-      -database postgres://admin:password@postgres:5432/auth_db?sslmode=disable 
+      -database postgres://admin:password@pgs-auth:5432/auth_db?sslmode=disable 
       up
     volumes:
       - ./auth/internal/migrations:/migrations
     depends_on:
-      postgres:
+      pgs-auth:
         condition: service_healthy
 
-  
-  # auth-generator:
-  #   image: andrianovartemii/gm-test-task-auth-generator:latest
-  #   ports:
-  #     - "8082:8080"
-  #   environment:
-  #     AUTH_TOKEN_LIFETIME: 2
-  #   healthcheck:
-  #     test: ["CMD", "curl", "-f", "http://localhost:8080/ping"]
-  #     interval: 1s
-  #     timeout: 1s
-  #     retries: 5
+  mgt-cur:
+    image: migrate/migrate
+    command: >
+      -path /migrations
+      -database postgres://admin:password@pgs-cur:5432/currency_db?sslmode=disable 
+      up
+    volumes:
+      - ./currency/internal/migrations:/migrations
+    depends_on:
+      pgs-cur:
+        condition: service_healthy
 
 
   cron:
@@ -66,11 +67,11 @@ services:
     volumes:
       - ./deployment/local:/deployment/local  # Mount the local directory into the container
     depends_on:
-      postgres:
+      pgs-cur:
         condition: service_healthy
     command: ["--config=/deployment/local/currency-local-config.yaml"]
 
-  currency:
+  cur:
     build:
       context: .
       dockerfile: ./deployment/local/Dockerfile
@@ -82,7 +83,7 @@ services:
       - "8081:8081"
       - "8090:8090"
     depends_on:
-      postgres:
+      pgs-cur:
         condition: service_healthy
     command: ["--config=/deployment/local/currency-local-config.yaml"]
 
@@ -98,11 +99,11 @@ services:
     ports:
       - "8091:8091"
     depends_on:
-      postgres:
+      pgs-auth:
         condition: service_healthy
     command: ["--config=/deployment/local/auth-local-config.yaml"]
 
-  gateway:
+  gtw:
     build:
       context: .
       dockerfile: ./deployment/local/Dockerfile
@@ -117,7 +118,7 @@ services:
         condition: service_started
     command: ["--config=/deployment/local/gateway-local-config.yaml"]
 
-  prometheus:
+  prmt:
     image: prom/prometheus:latest
     volumes:
       - ./currency/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
@@ -126,9 +127,9 @@ services:
     ports:
       - "9090:9090"
     depends_on:
-      - currency
+      - cur
 
-  grafana:
+  grfn:
     image: grafana/grafana:latest
     ports:
       - "3000:3000"
@@ -137,15 +138,15 @@ services:
     volumes:
       - ./monitoring/grafana:/var/lib/grafana
     depends_on:
-      - prometheus
+      - prmt
 
-  node-exporter:
+  nd-prt:
     image: prom/node-exporter:latest
     ports:
       - "9100:9100"
     restart: unless-stopped
 
-  cadvisor:
+  cdvsr:
     image: gcr.io/cadvisor/cadvisor:latest
     ports:
       - "8083:8080"
@@ -154,3 +155,7 @@ services:
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
     restart: unless-stopped
+
+volumes:
+  pgdata-auth:
+  pgdata-currency:
