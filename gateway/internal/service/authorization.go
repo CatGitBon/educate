@@ -40,7 +40,7 @@ func (s *AuthService) Register(req dto.RegisterRequest) error {
 
 func (s *AuthService) Login(ctx context.Context, login, password string) (string, error) {
 	// Проверяем, что пользователь существует
-	_, err := s.userRepo.GetUser(ctx, login)
+	_, err := s.userRepo.GetUser(ctx, 11)
 	if err != nil {
 		return "", fmt.Errorf("userRepo.GetUser: %w", err)
 	}
@@ -65,4 +65,8 @@ func (s *AuthService) ValidateToken(ctx context.Context, token string) error {
 
 func (s *AuthService) Logout(token string) error {
 	return errors.New("logout is not implemented")
+}
+
+func (s *AuthService) GetUserById(ctx context.Context, id int64) (repository.User, error) {
+	return s.userRepo.GetUser(ctx, id)
 }

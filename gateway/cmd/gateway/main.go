@@ -68,10 +68,9 @@ func run() error {
 		return fmt.Errorf("authClient.Ping: %w", err)
 	}
 
-	fmt.Println(resp)
-	// if resp != "pong" {
-	// 	return fmt.Errorf("auth client answered with invalid response: %w", err)
-	// }
+	if resp != "pong" {
+		return fmt.Errorf("auth client answered with invalid response: %w", err)
+	}
 
 	// authMiddleware := middleware.NewAuthorization(authClient, shouldSkipAuthMiddleware, logger)
 	// router.Use(authMiddleware.Authorize())

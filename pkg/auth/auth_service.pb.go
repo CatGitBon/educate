@@ -24,7 +24,7 @@ const (
 
 type GetUserByIdRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -59,16 +59,16 @@ func (*GetUserByIdRequest) Descriptor() ([]byte, []int) {
 	return file_auth_auth_service_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *GetUserByIdRequest) GetUserId() string {
+func (x *GetUserByIdRequest) GetUserId() int64 {
 	if x != nil {
 		return x.UserId
 	}
-	return ""
+	return 0
 }
 
 type GetUserByIdResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
 	Email         string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
@@ -106,11 +106,11 @@ func (*GetUserByIdResponse) Descriptor() ([]byte, []int) {
 	return file_auth_auth_service_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *GetUserByIdResponse) GetUserId() string {
+func (x *GetUserByIdResponse) GetUserId() int64 {
 	if x != nil {
 		return x.UserId
 	}
-	return ""
+	return 0
 }
 
 func (x *GetUserByIdResponse) GetUsername() string {
@@ -189,7 +189,7 @@ func (x *LoginRequest) GetPassword() string {
 type LoginResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
-	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	UserId        int64                  `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	Username      string                 `protobuf:"bytes,3,opt,name=username,proto3" json:"username,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -232,11 +232,11 @@ func (x *LoginResponse) GetToken() string {
 	return ""
 }
 
-func (x *LoginResponse) GetUserId() string {
+func (x *LoginResponse) GetUserId() int64 {
 	if x != nil {
 		return x.UserId
 	}
-	return ""
+	return 0
 }
 
 func (x *LoginResponse) GetUsername() string {
@@ -308,7 +308,7 @@ func (x *RegisterRequest) GetPassword() string {
 
 type RegisterResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
 	Email         string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -345,11 +345,11 @@ func (*RegisterResponse) Descriptor() ([]byte, []int) {
 	return file_auth_auth_service_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *RegisterResponse) GetUserId() string {
+func (x *RegisterResponse) GetUserId() int64 {
 	if x != nil {
 		return x.UserId
 	}
-	return ""
+	return 0
 }
 
 func (x *RegisterResponse) GetUsername() string {
@@ -372,9 +372,9 @@ const file_auth_auth_service_proto_rawDesc = "" +
 	"\n" +
 	"\x17auth/auth_service.proto\x12\x04auth\x1a\x1fgoogle/protobuf/timestamp.proto\"-\n" +
 	"\x12GetUserByIdRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\"\x9b\x01\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\"\x9b\x01\n" +
 	"\x13GetUserByIdResponse\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1a\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x14\n" +
 	"\x05email\x18\x03 \x01(\tR\x05email\x129\n" +
 	"\n" +
@@ -384,14 +384,14 @@ const file_auth_auth_service_proto_rawDesc = "" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\"Z\n" +
 	"\rLoginResponse\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x1a\n" +
+	"\auser_id\x18\x02 \x01(\x03R\x06userId\x12\x1a\n" +
 	"\busername\x18\x03 \x01(\tR\busername\"_\n" +
 	"\x0fRegisterRequest\x12\x1a\n" +
 	"\busername\x18\x01 \x01(\tR\busername\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x1a\n" +
 	"\bpassword\x18\x03 \x01(\tR\bpassword\"]\n" +
 	"\x10RegisterResponse\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1a\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x14\n" +
 	"\x05email\x18\x03 \x01(\tR\x05email2\xbe\x01\n" +
 	"\vAuthService\x12B\n" +

@@ -1,47 +1,40 @@
 package handler
 
 import (
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/vctrl/currency-service/auth/internal/dto"
+	"github.com/vctrl/currency-service/auth/internal/service"
 	"github.com/vctrl/currency-service/pkg/auth"
 	"go.uber.org/zap"
-	// "github.com/vctrl/currency-service/auth/internal/dto"
 )
 
 type AuthService interface {
-	GetUserByID()
+	GetUserByID(dto *dto.GetUserByIdRequest) *dto.User
 }
 
-// todo tests
 type AuthServer struct {
 	auth.UnimplementedAuthServiceServer
 	service AuthService
 	logger  *zap.Logger
 
-	// requestCount    *prometheus.CounterVec
-	// requestDuration *prometheus.HistogramVec
-	// appUptime       prometheus.Gauge
+	requestCount    *prometheus.CounterVec
+	requestDuration *prometheus.HistogramVec
+	appUptime       prometheus.Gauge
 }
 
-func NewAuthServer(svc AuthService,
+func NewAuthServer(
+	svc *service.Auth,
 	logger *zap.Logger,
-	// requestCount *prometheus.CounterVec,
-	// requestDuration *prometheus.HistogramVec,
-	// appUptime prometheus.Gauge
+	requestCount *prometheus.CounterVec,
+	requestDuration *prometheus.HistogramVec,
+	appUptime prometheus.Gauge,
 ) *AuthServer {
 
 	return &AuthServer{
-		service: svc,
-		logger:  logger,
-		// requestCount:    requestCount,
-		// requestDuration: requestDuration,
-		// appUptime:       appUptime,
+		service:         svc,
+		logger:          logger,
+		requestCount:    requestCount,
+		requestDuration: requestDuration,
+		appUptime:       appUptime,
 	}
 }
-
-// func (s *AuthServer) GetUser(ctx context.Context, req *auth.GetUserRequest) (*auth.GetUserResponse, error) {
-// 	// TODO: Implement actual user retrieval logic
-// 	return &auth.GetUserResponse{
-// 		UserId:   req.UserId,
-// 		Username: "test_user",
-// 		Email:    "test@example.com",
-// 	}, nil
-// }

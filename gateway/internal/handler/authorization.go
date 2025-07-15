@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/vctrl/currency-service/gateway/internal/dto"
 
@@ -66,4 +67,27 @@ func (s *controller) Logout(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "logout successful"})
+}
+
+func (s *controller) GetUserByID(c *gin.Context) {
+	// token := c.GetHeader("Authorization")
+	// if token == "" {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Authorization token is required"})
+	// 	return
+	// }
+
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	user, err := s.authService.GetUserById(c.Request.Context(), id)
+	if err != nil {
+		s.handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
 }

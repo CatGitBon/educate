@@ -44,10 +44,10 @@ func (repo *UserRepository) AddUser(user User) error {
 	return nil
 }
 
-func (repo *UserRepository) GetUser(ctx context.Context, login string) (User, error) {
+func (repo *UserRepository) GetUser(ctx context.Context, userId int64) (User, error) {
 	// Делаем gRPC вызов к auth сервису
 	req := &auth.GetUserByIdRequest{
-		UserId: login,
+		UserId: userId,
 	}
 
 	resp, err := repo.authClient.GetUserById(ctx, req)

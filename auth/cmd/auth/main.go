@@ -6,7 +6,9 @@ import (
 	"log"
 	"net"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/vctrl/currency-service/auth/internal/config"
+	"github.com/vctrl/currency-service/auth/internal/db"
 	"github.com/vctrl/currency-service/auth/internal/handler"
 	"github.com/vctrl/currency-service/auth/internal/repository"
 	"github.com/vctrl/currency-service/auth/internal/service"
@@ -14,6 +16,39 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
+
+var (
+	requestCount = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "currency_requests_total",
+			Help: "Total number of requests handled by the currency service",
+		},
+		[]string{"method"},
+	)
+
+	requestDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "currency_request_duration_seconds",
+			Help:    "Histogram of response times for requests",
+			Buckets: prometheus.DefBuckets,
+		},
+		[]string{"method"},
+	)
+
+	appUptime = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "currency_service_uptime_seconds",
+			Help: "Time since service start in seconds",
+		},
+	)
+)
+
+func init() {
+	// Регистрируем метрики
+	prometheus.MustRegister(requestCount)
+	prometheus.MustRegister(requestDuration)
+	prometheus.MustRegister(appUptime)
+}
 
 func main() {
 	err := run()
@@ -37,23 +72,19 @@ func run() error {
 		log.Fatalf("error loading config: %v", err)
 	}
 
-	// Временно отключаем базу данных для тестирования
-	// db, _, err := db.NewDatabaseConnection(cfg.Database)
-	// if err != nil {
-	// 	log.Fatalf("error init database connection: %v", err)
-	// }
+	db, _, err := db.NewDatabaseConnection(cfg.Database)
+	if err != nil {
+		log.Fatalf("error init database connection: %v", err)
+	}
 
-	// repo, err := repository.NewAuth(db)
-	// if err != nil {
-	// 	log.Fatalf("error init exchange rate repository: %v", err)
-	// }
+	repo, err := repository.NewAuth(db)
+	if err != nil {
+		log.Fatalf("error init exchange rate repository: %v", err)
+	}
 
-	// srv := service.NewAuth(repo, logger)
+	srv := service.NewAuth(repo, logger)
 
-	// Создаем mock сервис без базы данных
-	srv := service.NewAuth(repository.Auth{}, logger)
-
-	authServer := handler.NewAuthServer(&srv, logger)
+	authServer := handler.NewAuthServer(srv, logger, requestCount, requestDuration, appUptime)
 
 	go func() {
 		if err := startGRPCServer(cfg, authServer); err != nil {

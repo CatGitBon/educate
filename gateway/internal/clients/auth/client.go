@@ -25,7 +25,7 @@ type Client struct {
 }
 
 func NewAuthClient(cfg config.AuthConfig) (*Client, error) {
-	conn, err := grpc.Dial(cfg.BaseURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(cfg.BaseURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to auth service: %w", err)
 	}
@@ -51,16 +51,17 @@ func (c *Client) Ping() (string, error) {
 
 	// Для ping используем GetUser с тестовым ID
 	req := &auth.GetUserByIdRequest{
-		UserId: "ping",
+		UserId: 1,
 	}
 
-	res, err := c.client.GetUserById(ctx, req)
+	_, err := c.client.GetUserById(ctx, req)
+
 	if err != nil {
 		return "", fmt.Errorf("ping failed: %w", err)
 	}
 
 	// Возвращаем любой успешный ответ
-	return res.UserId, nil
+	return "pong", nil
 }
 
 func (c *Client) GenerateToken(ctx context.Context, login string) (string, error) {

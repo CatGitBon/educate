@@ -39,6 +39,7 @@ func RegisterRoutes(authSvc service.AuthService,
 	cntrl.router.POST("/api/v1/login", cntrl.Login)
 	cntrl.router.POST("/api/v1/register", cntrl.Register)
 	cntrl.router.POST("/api/v1/logout", cntrl.Logout)
+	cntrl.router.GET("/api/v1/user/:id", cntrl.GetUserByID)
 
 	return cntrl
 }
